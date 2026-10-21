@@ -271,7 +271,7 @@ class CustomDashboardLayoutView(discord.ui.LayoutView):
         component = discord.ui.Container(
             discord.ui.MediaGallery(
                 discord.MediaGalleryItem(
-                    "https://cdn.discordapp.com/attachments/1330603976097267762/1532071333247062226/Copy_of_Copy_of_DASHBOARD_12.png?ex=6a6b841e&is=6a6a329e&hm=966c18dd79c0a50aca7d540a9ad861798317ae137bf2c88db996422070a3d122&",
+                    "https://media.discordapp.net/attachments/1562568568959144077/1562568710755979324/Support_Header.png?ex=6ada7703&is=6ad92583&hm=be11b9d9302c8bda42d1a2586be76c2ce467a22a3793dc4cc77c9db848977a73&=&format=webp&quality=lossless",
                 ),
                 id=2,
             ),
@@ -313,7 +313,7 @@ class CustomDashboardLayoutView(discord.ui.LayoutView):
             ),
             discord.ui.MediaGallery(
                 discord.MediaGalleryItem(
-                    "https://media.discordapp.net/attachments/1562568568959144077/1562568710755979324/Support_Header.png?ex=6ada7703&is=6ad92583&hm=be11b9d9302c8bda42d1a2586be76c2ce467a22a3793dc4cc77c9db848977a73&=&format=webp&quality=lossless" 
+                    "Footer" 
                 ),
                 id=11
             ),
