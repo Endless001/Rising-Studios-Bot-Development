@@ -54,7 +54,7 @@ class TicketControlView(discord.ui.View):
                         f"**Ticket Channel:** `{interaction.channel.name}`\n"
                         f"**Closed By:** {interaction.user.mention}\n"
                     ),
-                    color=discord.Color.red(),
+                    color=discord.Color.from_rgb(52, 152, 219),
                     timestamp=discord.utils.utcnow()
                 )
                 file_bytes.seek(0)
@@ -86,7 +86,7 @@ class TicketControlView(discord.ui.View):
 
         embed = discord.Embed(
             description=f"✅ This ticket is now being handled by {interaction.user.mention}.",
-            color=discord.Color.green(),
+            color=discord.Color.from_rgb(52, 152, 219),
         )
         await interaction.followup.send(embed=embed)
 
@@ -126,26 +126,26 @@ class TicketCategorySelect(discord.ui.Select):
     def __init__(self):
         options = [
             discord.SelectOption(
-                label="General Ticket",
+                label="General",
                 value="general",
-                description="Questions, Department Inquiries, Basic Partnerships",
+                description="Discord questions & in-game support",
                 emoji="💬",
             ),
             discord.SelectOption(
-                label="Internal Affairs Ticket",
-                value="ia",
-                description="Reporting LR Staff or Players in-game",
+                label="Player Report",
+                value="player_report",
+                description="Report in-game players or Discord users",
                 emoji="🛡️",
             ),
             discord.SelectOption(
-                label="Management Ticket",
-                value="management",
-                description="HR Staff Report, Violations of ToS, Staff Partnerships",
-                emoji="👑",
+                label="Partnership Requests",
+                value="partnership",
+                description="Request a server partnership or affiliation",
+                emoji="🤝",
             ),
         ]
         super().__init__(
-            placeholder="Select a category to open a ticket...",
+            placeholder="Select a ticket category...",
             min_values=1,
             max_values=1,
             options=options,
@@ -164,16 +164,16 @@ class TicketCategorySelect(discord.ui.Select):
             role_id = get_env_id("GENERAL_ROLE_ID")
             prefix = "general"
             title_name = "General Support"
-        elif category_choice == "ia":
+        elif category_choice == "player_report":
             cat_id = get_env_id("IA_TICKET_CATEGORY_ID")
             role_id = get_env_id("INTERNAL_AFFAIRS_ROLE_ID")
-            prefix = "ia"
-            title_name = "Internal Affairs"
+            prefix = "report"
+            title_name = "Player Report"
         else:
             cat_id = get_env_id("MANAGEMENT_TICKET_CATEGORY_ID")
             role_id = get_env_id("MANAGEMENT_ROLE_ID")
-            prefix = "mgmt"
-            title_name = "Management Support"
+            prefix = "partner"
+            title_name = "Partnership Request"
 
         overwrites = {
             guild.default_role: discord.PermissionOverwrite(read_messages=False, view_channel=False),
@@ -198,43 +198,46 @@ class TicketCategorySelect(discord.ui.Select):
         )
         
         embeds = []
+        light_blue = discord.Color.from_rgb(52, 152, 219)
+        
         info_embed = discord.Embed(
             title=f"🎟️ {title_name}",
             description=(
                 f"Welcome {user.mention}! Thank you for contacting **Rising Studios Development**.\n\n"
-                "Please describe your issue or inquiry in detail below. Provide any relevant usernames, screenshots, "
-                "or proof so staff can assist you promptly.\n\n"
+                "Please describe your issue or inquiry in detail below. Provide any relevant information, usernames, "
+                "or proof so our staff team can assist you promptly.\n\n"
                 f"**Opened By:** {user.mention}\n"
                 f"**Category:** `{title_name}`\n"
                 f"**Status:** `Open`"
             ),
-            color=0x1C5D86
+            color=light_blue
         )
         embeds.append(info_embed)
 
-        if category_choice == "general":
+        if category_choice == "player_report":
             format_embed = discord.Embed(
-                title="🤝 Partnership & General Inquiry Format",
-                description=(
-                    "Please copy and fill out the following format for your partnership or inquiry:\n\n"
-                    "**Member Count:**\n"
-                    "**Server Name:**\n"
-                    "**Server Owner:**\n"
-                    "**Why Should We Partner/Affiliate:**"
-                ),
-                color=discord.Color.blue()
-            )
-            embeds.append(format_embed)
-        elif category_choice == "ia":
-            format_embed = discord.Embed(
-                title="🛡️ Internal Affairs Report Format",
+                title="🛡️ Player Report Format",
                 description=(
                     "Please copy and fill out the following format for your report:\n\n"
-                    "**HR Member:**\n"
+                    "**User/Player Being Reported:**\n"
                     "**Reason For Report:**\n"
-                    "**Proof:**"
+                    "**Proof / Evidence (Screenshots/Video):**"
                 ),
-                color=discord.Color.orange()
+                color=light_blue
+            )
+            embeds.append(format_embed)
+        elif category_choice == "partnership":
+            format_embed = discord.Embed(
+                title="🤝 Partnership Request Format",
+                description=(
+                    "Please copy and fill out the following format for your partnership request:\n\n"
+                    "**Server Name:**\n"
+                    "**Invite Link:**\n"
+                    "**Member Count:**\n"
+                    "**Server Owner:**\n"
+                    "**Why Should We Partner:**"
+                ),
+                color=light_blue
             )
             embeds.append(format_embed)
 
@@ -259,7 +262,7 @@ class PanelView(discord.ui.View):
 
 
 # -------------------------------------------------------------------
-# Custom Dashboard Layout View (V2 Layout Container)
+# Custom Dashboard Layout View (Light Blue Theme & 3 Ticket Categories)
 # -------------------------------------------------------------------
 class CustomDashboardLayoutView(discord.ui.LayoutView):
     def __init__(self):
@@ -278,7 +281,7 @@ class CustomDashboardLayoutView(discord.ui.LayoutView):
                 id=3,
             ),
             discord.ui.TextDisplay(
-                "## 🆘 Rising Studios Development Support Dashboard\n\n***Please note that when opening a ticket, you ensure that it is the correct ticket type, you do not ping any staff, and you fill out any relevant information or formats provided.***",
+                "## 🆘 Rising Studios Development Support Dashboard\n\n***Please select the correct ticket category below. Make sure not to ping staff members directly upon opening a ticket, and provide all requested information or formats clearly.***",
                 id=4,
             ),
             discord.ui.Separator(
@@ -287,7 +290,7 @@ class CustomDashboardLayoutView(discord.ui.LayoutView):
                 id=5,
             ),
             discord.ui.TextDisplay(
-                "**General ticket**\n`-` Questions\n`-` Department Inquires\n`-` Basic Partnerships\n\n**Internal Affairs Ticket**\n`-` Reporting LR Staff\n`-` Reporting players in-game\n\n**Management Ticket**\n`-` HR Staff Report\n`-` Violations of ToS\n`-` Staff Partnership Inquires",
+                "**💬 General**\n`-` Discord Questions\n`-` Support about in-game\n\n**🛡️ Player Report**\n`-` In-game Player report\n`-` Discord User Report\n\n**🤝 Partnership Requests**\n`-` Request a partnership/affiliation",
                 id=6,
             ),
             discord.ui.Separator(
@@ -305,7 +308,7 @@ class CustomDashboardLayoutView(discord.ui.LayoutView):
                 id=7,
             ),
             discord.ui.TextDisplay(
-                "**📝 Please note that we do not merge into server, you may merge into us but we wont merge into you. Also, if you ping any staff when you have opened your ticket, it will be closed.**",
+                "**📝 Note: Pinging staff members inside tickets without reason may result in your ticket being closed.**",
                 id=8,
             ),
             discord.ui.MediaGallery(
@@ -314,7 +317,7 @@ class CustomDashboardLayoutView(discord.ui.LayoutView):
                 ),
                 id=11
             ),
-            accent_color=1858598,
+            accent_color=3447003,  # Light blue accent color representation
             id=1,
         )
         
@@ -343,8 +346,8 @@ class AdvancedTicketCog(commands.Cog):
     ) -> list[app_commands.Choice[str]]:
         category_map = {
             "General Support": get_env_id("GENERAL_TICKET_CATEGORY_ID"),
-            "Internal Affairs": get_env_id("IA_TICKET_CATEGORY_ID"),
-            "Management Support": get_env_id("MANAGEMENT_TICKET_CATEGORY_ID"),
+            "Player Report": get_env_id("IA_TICKET_CATEGORY_ID"),
+            "Partnership Requests": get_env_id("MANAGEMENT_TICKET_CATEGORY_ID"),
         }
 
         choices = []
@@ -370,7 +373,7 @@ class AdvancedTicketCog(commands.Cog):
     ):
         await interaction.response.defer(ephemeral=True)
 
-        valid_prefixes = ("general-", "ia-", "mgmt-")
+        valid_prefixes = ("general-", "report-", "partner-")
         if not interaction.channel.name.startswith(valid_prefixes):
             await interaction.followup.send(
                 "❌ This command can only be used inside an active ticket channel!", 
@@ -433,13 +436,14 @@ class AdvancedTicketCog(commands.Cog):
                 if ia_role:
                     await interaction.channel.set_permissions(ia_role, read_messages=False, view_channel=False)
 
+            light_blue = discord.Color.from_rgb(52, 152, 219)
             embed = discord.Embed(
                 title="⚠️ Ticket Escalated",
                 description=(
                     f"This ticket has been escalated to **{target_category.name}** "
                     f"by {interaction.user.mention}.\nPermissions have been updated."
                 ),
-                color=discord.Color.gold(),
+                color=light_blue,
                 timestamp=discord.utils.utcnow()
             )
             await interaction.channel.send(embed=embed)
