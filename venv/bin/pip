@@ -1,4 +1,4 @@
-#!/Users/Noah/Downloads/Rising-Studios-bot-Developtment/Rising-Studios-Bot-Development/venv/bin/python3
+#!/home/noah/Rising-Studios-Bot-Development/venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys
