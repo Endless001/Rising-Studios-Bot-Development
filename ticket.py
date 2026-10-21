@@ -120,7 +120,7 @@ class TicketControlView(discord.ui.View):
 
 
 # -------------------------------------------------------------------
-# Dashboard Ticket Category Select Menu & View (Standard View for Dropdown)
+# Dashboard Ticket Category Select Menu & View
 # -------------------------------------------------------------------
 class TicketCategorySelect(discord.ui.Select):
     def __init__(self):
@@ -201,7 +201,7 @@ class TicketCategorySelect(discord.ui.Select):
         info_embed = discord.Embed(
             title=f"🎟️ {title_name}",
             description=(
-                f"Welcome {user.mention}! Thank you for contacting the **South Dakota Support Team**.\n\n"
+                f"Welcome {user.mention}! Thank you for contacting **Rising Studios Development**.\n\n"
                 "Please describe your issue or inquiry in detail below. Provide any relevant usernames, screenshots, "
                 "or proof so staff can assist you promptly.\n\n"
                 f"**Opened By:** {user.mention}\n"
@@ -259,7 +259,7 @@ class PanelView(discord.ui.View):
 
 
 # -------------------------------------------------------------------
-# YOUR CUSTOM DASHBOARD PANEL VIEW (V2 Layout Container Only)
+# Custom Dashboard Layout View (V2 Layout Container)
 # -------------------------------------------------------------------
 class CustomDashboardLayoutView(discord.ui.LayoutView):
     def __init__(self):
@@ -278,7 +278,7 @@ class CustomDashboardLayoutView(discord.ui.LayoutView):
                 id=3,
             ),
             discord.ui.TextDisplay(
-                "## 🆘 South Dakota Support Dashboard\n\n***Please note that when opening a ticket, you ensure that it is the correct ticket type, you do not ping any staff, if you are doing a partnership your server meet the requirements in https://discord.com/channels/1283441788153102358/1528083022094532618 and you fill out any relevant information or formats provided.***",
+                "## 🆘 Rising Studios Development Support Dashboard\n\n***Please note that when opening a ticket, you ensure that it is the correct ticket type, you do not ping any staff, and you fill out any relevant information or formats provided.***",
                 id=4,
             ),
             discord.ui.Separator(
@@ -338,7 +338,6 @@ class AdvancedTicketCog(commands.Cog):
         await interaction.channel.send(view=CustomDashboardLayoutView())
         await interaction.channel.send(view=PanelView())
 
-    # Autocomplete function to dynamic restrict to configured ticket categories only
     async def escalate_autocomplete(
         self, interaction: discord.Interaction, current: str
     ) -> list[app_commands.Choice[str]]:
@@ -371,7 +370,6 @@ class AdvancedTicketCog(commands.Cog):
     ):
         await interaction.response.defer(ephemeral=True)
 
-        # Validates that the channel starts with your active prefixes
         valid_prefixes = ("general-", "ia-", "mgmt-")
         if not interaction.channel.name.startswith(valid_prefixes):
             await interaction.followup.send(
@@ -383,7 +381,6 @@ class AdvancedTicketCog(commands.Cog):
         category_id = int(category) if category.isdigit() else 0
         target_category = interaction.guild.get_channel(category_id)
 
-        # Retrieve Environment IDs for Categories and Roles
         gen_cat_id = get_env_id("GENERAL_TICKET_CATEGORY_ID")
         ia_cat_id = get_env_id("IA_TICKET_CATEGORY_ID")
         mgmt_cat_id = get_env_id("MANAGEMENT_TICKET_CATEGORY_ID")
@@ -402,25 +399,17 @@ class AdvancedTicketCog(commands.Cog):
             return
 
         try:
-            old_category = interaction.channel.category
-
-            # 1. Move channel to the target category
             await interaction.channel.edit(
                 category=target_category, 
                 reason=f"Ticket escalated to {target_category.name} by {interaction.user}"
             )
-
-            # 2. Sync permissions with the new category first
             await interaction.channel.edit(sync_permissions=True)
 
-            # 3. Update permissions so only the designated role (and ticket opener) can view
             gen_role = interaction.guild.get_role(gen_role_id) if gen_role_id else None
             ia_role = interaction.guild.get_role(ia_role_id) if ia_role_id else None
             mgmt_role = interaction.guild.get_role(mgmt_role_id) if mgmt_role_id else None
 
-            # Remove access for staff roles not meant to see this category
             if target_category.id == gen_cat_id:
-                # General Category: Allow General Staff Role
                 if gen_role:
                     await interaction.channel.set_permissions(gen_role, read_messages=True, view_channel=True, send_messages=True)
                 if ia_role:
@@ -429,7 +418,6 @@ class AdvancedTicketCog(commands.Cog):
                     await interaction.channel.set_permissions(mgmt_role, overwrite=None)
 
             elif target_category.id == ia_cat_id:
-                # Internal Affairs Category: Only IA Role
                 if ia_role:
                     await interaction.channel.set_permissions(ia_role, read_messages=True, view_channel=True, send_messages=True)
                 if gen_role:
@@ -438,7 +426,6 @@ class AdvancedTicketCog(commands.Cog):
                     await interaction.channel.set_permissions(mgmt_role, read_messages=False, view_channel=False)
 
             elif target_category.id == mgmt_cat_id:
-                # Management Category: Only Management Role
                 if mgmt_role:
                     await interaction.channel.set_permissions(mgmt_role, read_messages=True, view_channel=True, send_messages=True)
                 if gen_role:
