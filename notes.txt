@@ -1,0 +1,34 @@
+# ==============================================================================
+# 1. PULL LATEST CODE FROM GITHUB (From Mac/PC -> Raspberry Pi)
+# ==============================================================================
+cd ~/Rising-Studios-Bot-Development
+git reset --hard HEAD
+git pull origin main
+
+
+# ==============================================================================
+# 2. START THE BOT IN BACKGROUND (Stays online even if SSH closes)
+# ==============================================================================
+# Start bot in a background session named "bot"
+screen -S bot -d -m ./venv/bin/python main.py
+
+# Useful Screen Commands:
+# - View running bot console:   screen -r bot
+# - Detach console (leave bot):  Press Ctrl + A, then press D
+# - Stop/Kill the bot session:  screen -X -S bot quit
+# - List running sessions:      screen -ls
+
+
+# ==============================================================================
+# 3. PUSH LOCAL CHANGES TO GITHUB (From Raspberry Pi -> GitHub)
+# ==============================================================================
+cd ~/Rising-Studios-Bot-Development
+git add .
+git commit -m "Update bot files from Raspberry Pi"
+git push origin main
+
+
+# ==============================================================================
+# 4. DISCONNECT SSH SAFELY
+# ==============================================================================
+exit
