@@ -29,7 +29,11 @@ async def log_to_google_sheet(action: str, data: dict):
     def _sync_log():
         try:
             import gspread
-            gc = gspread.service_account(filename=os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "credentials.json"))
+            import pathlib
+BASE_DIR = pathlib.Path(__file__).parent
+cred_path = BASE_DIR / "credentials.json"
+
+gc = gspread.service_account(filename=os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", str(cred_path)))
             sh = gc.open_by_key(spreadsheet_id)
             worksheet = sh.sheet1
 
