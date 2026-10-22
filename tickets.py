@@ -331,6 +331,10 @@ class AdvancedTicketCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
+    def is_ticket_channel(self, channel: discord.TextChannel) -> bool:
+        valid_prefixes = ("general-", "report-", "partner-")
+        return channel.name.startswith(valid_prefixes)
+
     @app_commands.command(
         name="ticketpanel",
         description="Posts the support ticket dashboard panel.",
@@ -341,6 +345,139 @@ class AdvancedTicketCog(commands.Cog):
         await interaction.channel.send(view=CustomDashboardLayoutView())
         await interaction.channel.send(view=PanelView())
 
+    # -------------------------------------------------------------------
+    # Ticket Slash Commands
+    # -------------------------------------------------------------------
+    @app_commands.command(
+        name="claim",
+        description="Claims the active ticket for yourself.",
+    )
+    @app_commands.default_permissions(manage_channels=True)
+    async def claim(self, interaction: discord.Interaction):
+        if not self.is_ticket_channel(interaction.channel):
+            await interaction.response.send_message(
+                "❌ This command can only be used inside an active ticket channel!",
+                ephemeral=True,
+            )
+            return
+
+        embed = discord.Embed(
+            description=f"🙋‍♂️ This ticket has been claimed by {interaction.user.mention}.",
+            color=discord.Color.from_rgb(52, 152, 219),
+        )
+        await interaction.response.send_message(embed=embed)
+
+    @app_commands.command(
+        name="unclaim",
+        description="Unclaims the active ticket so another staff member can handle it.",
+    )
+    @app_commands.default_permissions(manage_channels=True)
+    async def unclaim(self, interaction: discord.Interaction):
+        if not self.is_ticket_channel(interaction.channel):
+            await interaction.response.send_message(
+                "❌ This command can only be used inside an active ticket channel!",
+                ephemeral=True,
+            )
+            return
+
+        embed = discord.Embed(
+            description=f"🔓 This ticket is no longer claimed and is open for other staff members.",
+            color=discord.Color.gold(),
+        )
+        await interaction.response.send_message(embed=embed)
+
+    @app_commands.command(
+        name="add",
+        description="Adds a user to the current ticket channel.",
+    )
+    @app_commands.describe(user="The member to add to this ticket")
+    @app_commands.default_permissions(manage_channels=True)
+    async def add_user(self, interaction: discord.Interaction, user: discord.Member):
+        if not self.is_ticket_channel(interaction.channel):
+            await interaction.response.send_message(
+                "❌ This command can only be used inside an active ticket channel!",
+                ephemeral=True,
+            )
+            return
+
+        await interaction.channel.set_permissions(
+            user, read_messages=True, view_channel=True, send_messages=True
+        )
+
+        embed = discord.Embed(
+            description=f"✅ Added {user.mention} to this ticket.",
+            color=discord.Color.green(),
+        )
+        await interaction.response.send_message(embed=embed)
+
+    @app_commands.command(
+        name="rename",
+        description="Renames the current ticket channel.",
+    )
+    @app_commands.describe(new_name="The new name for this ticket channel")
+    @app_commands.default_permissions(manage_channels=True)
+    async def rename(self, interaction: discord.Interaction, new_name: str):
+        if not self.is_ticket_channel(interaction.channel):
+            await interaction.response.send_message(
+                "❌ This command can only be used inside an active ticket channel!",
+                ephemeral=True,
+            )
+            return
+
+        clean_name = new_name.lower().replace(" ", "-")
+        await interaction.channel.edit(name=clean_name, reason=f"Renamed by {interaction.user}")
+
+        embed = discord.Embed(
+            description=f"✏️ Ticket channel renamed to `{clean_name}`.",
+            color=discord.Color.from_rgb(52, 152, 219),
+        )
+        await interaction.response.send_message(embed=embed)
+
+    @app_commands.command(
+        name="notes",
+        description="Opens a private staff notes thread for this ticket.",
+    )
+    @app_commands.default_permissions(manage_channels=True)
+    async def ticket_notes(self, interaction: discord.Interaction):
+        if not self.is_ticket_channel(interaction.channel):
+            await interaction.response.send_message(
+                "❌ This command can only be used inside an active ticket channel!",
+                ephemeral=True,
+            )
+            return
+
+        thread_name = f"🔒-notes-{interaction.channel.name}"
+
+        # Check if thread already exists
+        for thread in interaction.channel.threads:
+            if thread.name == thread_name:
+                await interaction.response.send_message(
+                    f"⚠️ Staff notes thread already exists: {thread.mention}",
+                    ephemeral=True,
+                )
+                return
+
+        # Create a private thread (or public thread restricted to staff permissions)
+        thread = await interaction.channel.create_thread(
+            name=thread_name,
+            auto_archive_duration=1440,
+            type=discord.ChannelType.private_thread,
+            reason=f"Staff notes thread created by {interaction.user}",
+        )
+
+        await thread.send(
+            f"📌 **Staff Notes Thread** created by {interaction.user.mention}.\n"
+            "Use this thread for internal staff notes regarding this ticket."
+        )
+
+        await interaction.response.send_message(
+            f"✅ Created staff notes thread: {thread.mention}",
+            ephemeral=True,
+        )
+
+    # -------------------------------------------------------------------
+    # Escalate Command
+    # -------------------------------------------------------------------
     async def escalate_autocomplete(
         self, interaction: discord.Interaction, current: str
     ) -> list[app_commands.Choice[str]]:
@@ -373,8 +510,7 @@ class AdvancedTicketCog(commands.Cog):
     ):
         await interaction.response.defer(ephemeral=True)
 
-        valid_prefixes = ("general-", "report-", "partner-")
-        if not interaction.channel.name.startswith(valid_prefixes):
+        if not self.is_ticket_channel(interaction.channel):
             await interaction.followup.send(
                 "❌ This command can only be used inside an active ticket channel!", 
                 ephemeral=True
