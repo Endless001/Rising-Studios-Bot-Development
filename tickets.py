@@ -34,7 +34,17 @@ class TicketControlView(discord.ui.View):
             message
             async for message in interaction.channel.history(limit=500, oldest_first=True)
         ]
-        transcript_content = f"--- Transcript for {interaction.channel.name} ---\n\n"
+        
+        category_name = interaction.channel.category.name if interaction.channel.category else "Unknown Category"
+        transcript_content = (
+            f"========================================\n"
+            f" TICKET TRANSCRIPT\n"
+            f" Channel: #{interaction.channel.name}\n"
+            f" Category: {category_name}\n"
+            f" Closed By: {interaction.user}\n"
+            f" Date: {discord.utils.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}\n"
+            f"========================================\n\n"
+        )
         for msg in messages:
             transcript_content += f"[{msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}] {msg.author}: {msg.clean_content}\n"
 
@@ -52,7 +62,9 @@ class TicketControlView(discord.ui.View):
                     title="📝 Ticket Closed & Logged",
                     description=(
                         f"**Ticket Channel:** `{interaction.channel.name}`\n"
+                        f"**Category:** `{category_name}`\n"
                         f"**Closed By:** {interaction.user.mention}\n"
+                        f"**Total Messages:** `{len(messages)}`"
                     ),
                     color=discord.Color.from_rgb(52, 152, 219),
                     timestamp=discord.utils.utcnow()
@@ -102,7 +114,16 @@ class TicketControlView(discord.ui.View):
         messages = [
             message async for message in interaction.channel.history(limit=500, oldest_first=True)
         ]
-        transcript_content = f"--- Transcript for {interaction.channel.name} ---\n\n"
+        category_name = interaction.channel.category.name if interaction.channel.category else "Unknown Category"
+        transcript_content = (
+            f"========================================\n"
+            f" TICKET TRANSCRIPT (MANUAL EXPORT)\n"
+            f" Channel: #{interaction.channel.name}\n"
+            f" Category: {category_name}\n"
+            f" Exported By: {interaction.user}\n"
+            f" Date: {discord.utils.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}\n"
+            f"========================================\n\n"
+        )
         for msg in messages:
             transcript_content += f"[{msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}] {msg.author}: {msg.clean_content}\n"
 
@@ -317,7 +338,7 @@ class CustomDashboardLayoutView(discord.ui.LayoutView):
                 ),
                 id=11
             ),
-            accent_color=3447003,  # Light blue accent color representation
+            accent_color=3447003,
             id=1,
         )
         
@@ -331,9 +352,22 @@ class AdvancedTicketCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
 
-    def is_ticket_channel(self, channel: discord.TextChannel) -> bool:
-        valid_prefixes = ("general-", "report-", "partner-")
-        return channel.name.startswith(valid_prefixes)
+    def is_ticket_channel(self, channel: discord.abc.GuildChannel) -> bool:
+        """Validates if a channel is a ticket by checking its category ID instead of its name."""
+        if not isinstance(channel, discord.TextChannel):
+            return False
+            
+        gen_cat_id = get_env_id("GENERAL_TICKET_CATEGORY_ID")
+        ia_cat_id = get_env_id("IA_TICKET_CATEGORY_ID")
+        mgmt_cat_id = get_env_id("MANAGEMENT_TICKET_CATEGORY_ID")
+        
+        allowed_cat_ids = [c for c in [gen_cat_id, ia_cat_id, mgmt_cat_id] if c != 0]
+        
+        # Fallback if category IDs aren't set in env yet
+        if not allowed_cat_ids:
+            return channel.name.startswith(("general-", "report-", "partner-"))
+            
+        return channel.category_id in allowed_cat_ids
 
     @app_commands.command(
         name="ticketpanel",
@@ -446,7 +480,7 @@ class AdvancedTicketCog(commands.Cog):
             )
             return
 
-        thread_name = f"🔒-notes-{interaction.channel.name}"
+        thread_name = f"notes-{interaction.channel.name}"
 
         # Check if thread already exists
         for thread in interaction.channel.threads:
@@ -457,7 +491,6 @@ class AdvancedTicketCog(commands.Cog):
                 )
                 return
 
-        # Create a private thread (or public thread restricted to staff permissions)
         thread = await interaction.channel.create_thread(
             name=thread_name,
             auto_archive_duration=1440,
