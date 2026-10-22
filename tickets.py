@@ -15,6 +15,131 @@ def get_env_id(key: str) -> int:
 
 
 # -------------------------------------------------------------------
+# Google Sheets Logger Helper
+# -------------------------------------------------------------------
+async def log_to_google_sheet(action: str, data: dict):
+    """
+    Appends ticket event data (Created / Closed) to a Google Sheet asynchronously.
+    Requires `gspread` installed and `TICKET_SPREADSHEET_ID` + Google Service Account set up.
+    """
+    spreadsheet_id = os.environ.get("TICKET_SPREADSHEET_ID")
+    if not spreadsheet_id:
+        return
+
+    def _sync_log():
+        try:
+            import gspread
+            gc = gspread.service_account(filename=os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", "credentials.json"))
+            sh = gc.open_by_key(spreadsheet_id)
+            worksheet = sh.sheet1
+
+            if action == "OPEN":
+                # Row structure: Timestamp, Event, Channel ID, Channel Name, Category, User, Status
+                worksheet.append_row([
+                    data.get("timestamp"),
+                    "CREATED",
+                    str(data.get("channel_id")),
+                    data.get("channel_name"),
+                    data.get("category"),
+                    str(data.get("user")),
+                    "OPEN"
+                ])
+            elif action == "CLOSE":
+                # Row structure: Timestamp, Event, Channel ID, Channel Name, Category, Closed By, Status, Reason
+                worksheet.append_row([
+                    data.get("timestamp"),
+                    "CLOSED",
+                    str(data.get("channel_id")),
+                    data.get("channel_name"),
+                    data.get("category"),
+                    str(data.get("closed_by")),
+                    "CLOSED",
+                    data.get("reason", "No reason provided")
+                ])
+        except Exception as e:
+            log.warning(f"Failed to log ticket to Google Sheets: {e}")
+
+    await asyncio.to_thread(_sync_log)
+
+
+# -------------------------------------------------------------------
+# Common Ticket Close Handler
+# -------------------------------------------------------------------
+async def execute_ticket_close(channel: discord.TextChannel, user: discord.User | discord.Member, guild: discord.Guild, reason: str = "No reason provided"):
+    messages = [
+        message
+        async for message in channel.history(limit=500, oldest_first=True)
+    ]
+    
+    category_name = channel.category.name if channel.category else "Unknown Category"
+    timestamp_str = discord.utils.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')
+
+    transcript_content = (
+        f"========================================\n"
+        f" TICKET TRANSCRIPT\n"
+        f" Channel: #{channel.name}\n"
+        f" Channel ID: {channel.id}\n"
+        f" Category: {category_name}\n"
+        f" Closed By: {user}\n"
+        f" Reason: {reason}\n"
+        f" Date: {timestamp_str}\n"
+        f"========================================\n\n"
+    )
+    for msg in messages:
+        transcript_content += f"[{msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}] {msg.author}: {msg.clean_content}\n"
+
+    from io import BytesIO
+    file_bytes = BytesIO(transcript_content.encode("utf-8"))
+    transcript_file = discord.File(
+        file_bytes, filename=f"{channel.name}-transcript.txt"
+    )
+
+    # Log to Log Channel
+    log_channel_id = get_env_id("TICKET_LOG_CHANNEL_ID")
+    if log_channel_id:
+        log_channel = guild.get_channel(log_channel_id)
+        if log_channel:
+            log_embed = discord.Embed(
+                title="📝 Ticket Closed & Logged",
+                description=(
+                    f"**Ticket Channel:** `{channel.name}`\n"
+                    f"**Channel ID:** `{channel.id}`\n"
+                    f"**Category:** `{category_name}`\n"
+                    f"**Closed By:** {user.mention}\n"
+                    f"**Reason:** `{reason}`\n"
+                    f"**Total Messages:** `{len(messages)}`"
+                ),
+                color=discord.Color.from_rgb(52, 152, 219),
+                timestamp=discord.utils.utcnow()
+            )
+            file_bytes.seek(0)
+            await log_channel.send(embed=log_embed, file=transcript_file)
+
+    # Log to Google Sheets
+    asyncio.create_task(log_to_google_sheet("CLOSE", {
+        "timestamp": timestamp_str,
+        "channel_id": channel.id,
+        "channel_name": channel.name,
+        "category": category_name,
+        "closed_by": str(user),
+        "reason": reason
+    }))
+
+    embed = discord.Embed(
+        title="🔒 Closing Ticket",
+        description=f"Ticket closed by {user.mention}.\n**Reason:** {reason}\nChannel deleting in 5 seconds...",
+        color=discord.Color.red(),
+    )
+    await channel.send(embed=embed)
+    await asyncio.sleep(5)
+
+    try:
+        await channel.delete(reason=f"Ticket closed by {user} - Reason: {reason}")
+    except discord.NotFound:
+        pass
+
+
+# -------------------------------------------------------------------
 # Inside Ticket Controls (Close, Claim, Transcript)
 # -------------------------------------------------------------------
 class TicketControlView(discord.ui.View):
@@ -29,61 +154,12 @@ class TicketControlView(discord.ui.View):
     )
     async def close_ticket(self, interaction: discord.Interaction, button: discord.ui.Button):
         await interaction.response.defer()
-
-        messages = [
-            message
-            async for message in interaction.channel.history(limit=500, oldest_first=True)
-        ]
-        
-        category_name = interaction.channel.category.name if interaction.channel.category else "Unknown Category"
-        transcript_content = (
-            f"========================================\n"
-            f" TICKET TRANSCRIPT\n"
-            f" Channel: #{interaction.channel.name}\n"
-            f" Category: {category_name}\n"
-            f" Closed By: {interaction.user}\n"
-            f" Date: {discord.utils.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}\n"
-            f"========================================\n\n"
+        await execute_ticket_close(
+            channel=interaction.channel,
+            user=interaction.user,
+            guild=interaction.guild,
+            reason="Closed via Button"
         )
-        for msg in messages:
-            transcript_content += f"[{msg.created_at.strftime('%Y-%m-%d %H:%M:%S')}] {msg.author}: {msg.clean_content}\n"
-
-        from io import BytesIO
-        file_bytes = BytesIO(transcript_content.encode("utf-8"))
-        transcript_file = discord.File(
-            file_bytes, filename=f"{interaction.channel.name}-transcript.txt"
-        )
-
-        log_channel_id = get_env_id("TICKET_LOG_CHANNEL_ID")
-        if log_channel_id:
-            log_channel = interaction.guild.get_channel(log_channel_id)
-            if log_channel:
-                log_embed = discord.Embed(
-                    title="📝 Ticket Closed & Logged",
-                    description=(
-                        f"**Ticket Channel:** `{interaction.channel.name}`\n"
-                        f"**Category:** `{category_name}`\n"
-                        f"**Closed By:** {interaction.user.mention}\n"
-                        f"**Total Messages:** `{len(messages)}`"
-                    ),
-                    color=discord.Color.from_rgb(52, 152, 219),
-                    timestamp=discord.utils.utcnow()
-                )
-                file_bytes.seek(0)
-                await log_channel.send(embed=log_embed, file=transcript_file)
-
-        embed = discord.Embed(
-            title="🔒 Closing Ticket",
-            description=f"Ticket closed by {interaction.user.mention}.\nChannel deleting in 5 seconds...",
-            color=discord.Color.red(),
-        )
-        await interaction.followup.send(embed=embed)
-        await asyncio.sleep(5)
-
-        try:
-            await interaction.channel.delete(reason=f"Ticket closed by {interaction.user}")
-        except discord.NotFound:
-            pass
 
     @discord.ui.button(
         label="Claim",
@@ -119,6 +195,7 @@ class TicketControlView(discord.ui.View):
             f"========================================\n"
             f" TICKET TRANSCRIPT (MANUAL EXPORT)\n"
             f" Channel: #{interaction.channel.name}\n"
+            f" Channel ID: {interaction.channel.id}\n"
             f" Category: {category_name}\n"
             f" Exported By: {interaction.user}\n"
             f" Date: {discord.utils.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}\n"
@@ -270,6 +347,15 @@ class TicketCategorySelect(discord.ui.Select):
             view=TicketControlView()
         )
 
+        # Log creation to Google Sheets
+        asyncio.create_task(log_to_google_sheet("OPEN", {
+            "timestamp": discord.utils.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC'),
+            "channel_id": ticket_channel.id,
+            "channel_name": ticket_channel.name,
+            "category": title_name,
+            "user": str(user)
+        }))
+
         await interaction.followup.send(
             content=f"✅ Ticket created successfully! Go to {ticket_channel.mention}",
             ephemeral=True,
@@ -283,7 +369,7 @@ class PanelView(discord.ui.View):
 
 
 # -------------------------------------------------------------------
-# Custom Dashboard Layout View (Light Blue Theme & 3 Ticket Categories)
+# Custom Dashboard Layout View
 # -------------------------------------------------------------------
 class CustomDashboardLayoutView(discord.ui.LayoutView):
     def __init__(self):
@@ -353,7 +439,6 @@ class AdvancedTicketCog(commands.Cog):
         self.bot = bot
 
     def is_ticket_channel(self, channel: discord.abc.GuildChannel) -> bool:
-        """Validates if a channel is a ticket by checking its category ID instead of its name."""
         if not isinstance(channel, discord.TextChannel):
             return False
             
@@ -363,7 +448,6 @@ class AdvancedTicketCog(commands.Cog):
         
         allowed_cat_ids = [c for c in [gen_cat_id, ia_cat_id, mgmt_cat_id] if c != 0]
         
-        # Fallback if category IDs aren't set in env yet
         if not allowed_cat_ids:
             return channel.name.startswith(("general-", "report-", "partner-"))
             
@@ -380,8 +464,30 @@ class AdvancedTicketCog(commands.Cog):
         await interaction.channel.send(view=PanelView())
 
     # -------------------------------------------------------------------
-    # Ticket Slash Commands
+    # Slash Commands
     # -------------------------------------------------------------------
+    @app_commands.command(
+        name="close",
+        description="Closes the active ticket channel.",
+    )
+    @app_commands.describe(reason="Reason for closing the ticket")
+    @app_commands.default_permissions(manage_channels=True)
+    async def close_slash(self, interaction: discord.Interaction, reason: str = "No reason provided"):
+        if not self.is_ticket_channel(interaction.channel):
+            await interaction.response.send_message(
+                "❌ This command can only be used inside an active ticket channel!",
+                ephemeral=True,
+            )
+            return
+
+        await interaction.response.defer()
+        await execute_ticket_close(
+            channel=interaction.channel,
+            user=interaction.user,
+            guild=interaction.guild,
+            reason=reason
+        )
+
     @app_commands.command(
         name="claim",
         description="Claims the active ticket for yourself.",
@@ -482,7 +588,6 @@ class AdvancedTicketCog(commands.Cog):
 
         thread_name = f"notes-{interaction.channel.name}"
 
-        # Check if thread already exists
         for thread in interaction.channel.threads:
             if thread.name == thread_name:
                 await interaction.response.send_message(
