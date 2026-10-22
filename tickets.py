@@ -313,7 +313,7 @@ class CustomDashboardLayoutView(discord.ui.LayoutView):
             ),
             discord.ui.MediaGallery(
                 discord.MediaGalleryItem(
-                    "Footer" 
+                    "https://cdn.discordapp.com/attachments/1330603976097267762/1531890992440020992/Untitled_design_39.png" 
                 ),
                 id=11
             ),
