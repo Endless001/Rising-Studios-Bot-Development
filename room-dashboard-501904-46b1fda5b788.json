@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "room-dashboard-501904",
+  "private_key_id": "46b1fda5b788a62201e7f0e354f4cc1a18a1f092",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCp7GiWvELdsXWM\n8Abv7w9UbJb/qCOGR5LigsNA2xIz9PVJKyNQeL62pGhfnQQthC62Yhs5EzAX+3KJ\n0+H4Js7lSL5kF71vUvi0p2bHg5nT24MUfDqkyzwqEsCCXJqS2he2KOwXCc5JZLic\n3Ilpmx2abK1RPrF6r0tXojkZXtS6z9Vy01PE/Eu2i85xsHvdyQ6EeZdO7iWld2z6\n6SeZNIrq9/FqB/Yac/LlbM1iSxcAsL9gB5i2IDnlIjL8XNAYJRLfEN25LLJNsyzF\nxFUh5ezTypF1w8zDhNIESHBUDUO3hdCkOipcR0NBK4BXl+ygDHi7r3VIzaFED91I\n85HSSZ7dAgMBAAECggEAP4Kj6Mr+tvuv8vh3r1ALy8M2gOGoPXUc+lpjficjW5YP\n48Qi0939cihq9mmqeRSxnOt4P1HjpOMPgWJXUDe5Fsuklaal4CkD2gnDiYivgxbF\nnG9+P7/Sges2VsMj5wVq3WPYMhgxKQ9jTQXEulsGqoQ6F2a2USOZpmx0qP3fxt5x\nFyJXXDfVvaaVslE//1S4T2CaOhHcKzpXOZiyjnMPkidVuhr0UbZ0PRhiSd1OTsK3\nErPAVe69FV2BfOs08R0geuLXlZAFBvL/jDVxZcOQlLhVCpQdiQnZarm4xXRRk1Hi\nMZS9TK70AIXxJEH89Vuot+NudbltvW8Ws90lQo0shQKBgQDgVF4og8jvoik48B3U\ni7nv4XtkNBCsGNvgtMm3Mkg8UzJwEYdZWMmfgC/xMpbGwlzzbNvfyRqr4RubszKG\n6wRmrJpCUJUIU04bMTJS+1g7RC11OgM3McedD1h5dMCARwJJYLb2e5XKwfqd27Wp\nfXw4gug/KEzi4cFQPwkqkhTTPwKBgQDB6beElb+CcMpZdyywcuDl7Y1Xmoj28NbC\nW+y1MJIidKAaGuLOedZTUQooYf/U1gZlwSn/XqKNGvsN8XvI+sYAxyCELpUblP9y\ngyNTJQHSoBXoIAYaluXeDL5ZBE5qFhYBfBBuBfWSzByaQ7/i4xkOHQoS8md6frmn\nCqYX83Ay4wKBgBBLEGuw5q9A/+16wy/k1iRuJCArB+r4A0BW4S/FHyoCgO9S1pnO\nsRY8oT7Lhdf51fZ4OaAPYziIqRCt+0WBXFh4wNuALtLj+hBPinAsgUQMt6CEDie8\nHdtyeeKYcELg5XGe7KsKXt7TJ/i/NHqS+qrAF04/BxaTfw7tBSVqZsjRAoGAIS+u\niLJYJCrJdqY+r7P5aWBOYD/CUQDGwFybFidJ2zu6ar1PM6cGVxv3cRHUhshaL+/v\nEBVSHHQRo0FAvhSs7lUl63lNa3sEfMSUtxYOSc278g4I/WP10xq7OODTyrQc8AQb\ni7jZXlYwTvZpUJstHo05vCRgMUae30ejRVYUTaECgYAaFqQJ3/MrZ6MpcApFUGEV\nvES8XQsITqexPMSSbXaZ3Fk4mx0lxEE+fGrgchm/blO8vD1LDdJGl+ckuzNPZvv+\ny43szGbtvN6Bo7VRzgWNc58jq9HhGg6Djh+YvVSQ6uj3ItrOSzsjXSmloqrtxSVH\nS5YxBXeLOS2lqDhHwmDpiw==\n-----END PRIVATE KEY-----\n",
+  "client_email": "endless@room-dashboard-501904.iam.gserviceaccount.com",
+  "client_id": "111868326419813346323",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/endless%40room-dashboard-501904.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
