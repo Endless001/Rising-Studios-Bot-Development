@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 import logging
+import pathlib
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -29,16 +30,16 @@ async def log_to_google_sheet(action: str, data: dict):
     def _sync_log():
         try:
             import gspread
-            import pathlib
-BASE_DIR = pathlib.Path(__file__).parent
-cred_path = BASE_DIR / "credentials.json"
-
-gc = gspread.service_account(filename=os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", str(cred_path)))
+            base_dir = pathlib.Path(__file__).parent
+            cred_path = base_dir / "credentials.json"
+            
+            cred_file = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS", str(cred_path))
+            gc = gspread.service_account(filename=cred_file)
+            
             sh = gc.open_by_key(spreadsheet_id)
             worksheet = sh.sheet1
 
             if action == "OPEN":
-                # Row structure: Timestamp, Event, Channel ID, Channel Name, Category, User, Status
                 worksheet.append_row([
                     data.get("timestamp"),
                     "CREATED",
@@ -49,7 +50,6 @@ gc = gspread.service_account(filename=os.environ.get("GOOGLE_APPLICATION_CREDENT
                     "OPEN"
                 ])
             elif action == "CLOSE":
-                # Row structure: Timestamp, Event, Channel ID, Channel Name, Category, Closed By, Status, Reason
                 worksheet.append_row([
                     data.get("timestamp"),
                     "CLOSED",
@@ -98,7 +98,6 @@ async def execute_ticket_close(channel: discord.TextChannel, user: discord.User 
         file_bytes, filename=f"{channel.name}-transcript.txt"
     )
 
-    # Log to Log Channel
     log_channel_id = get_env_id("TICKET_LOG_CHANNEL_ID")
     if log_channel_id:
         log_channel = guild.get_channel(log_channel_id)
@@ -119,7 +118,6 @@ async def execute_ticket_close(channel: discord.TextChannel, user: discord.User 
             file_bytes.seek(0)
             await log_channel.send(embed=log_embed, file=transcript_file)
 
-    # Log to Google Sheets
     asyncio.create_task(log_to_google_sheet("CLOSE", {
         "timestamp": timestamp_str,
         "channel_id": channel.id,
@@ -351,7 +349,6 @@ class TicketCategorySelect(discord.ui.Select):
             view=TicketControlView()
         )
 
-        # Log creation to Google Sheets
         asyncio.create_task(log_to_google_sheet("OPEN", {
             "timestamp": discord.utils.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC'),
             "channel_id": ticket_channel.id,
