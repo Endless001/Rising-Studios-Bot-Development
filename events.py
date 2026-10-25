@@ -72,7 +72,7 @@ def build_event_layout(
 
     # 4. Project Details & RSVP Instructions
     details_line = (
-        f"**Project Schedule:** [Click here to view project timeline]({event_url})\n\n"
+        f"**Event Link:** [Click here to view Event]({event_url})\n\n"
         if event_url
         else ""
     )

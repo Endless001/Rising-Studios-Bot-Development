@@ -354,7 +354,10 @@ class DevPanelCog(commands.Cog):
         self.next_switch_timestamp: int | None = None
         
         self.status_pool = [
-            "Welcome To Rising Development"
+            "Welcome To Rising Development",
+            "Launch Day: Oct 31st!",
+            "Fear",
+            "Mangled: Oct 31st!"
         ]
         
         if not hasattr(bot, "_forced_status"):

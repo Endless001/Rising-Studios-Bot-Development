@@ -4,6 +4,8 @@
 cd ~/Rising-Studios-Bot-Development
 git reset --hard HEAD
 git pull origin main
+        User: Endless001
+        Password: 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
 
 
 # ==============================================================================
