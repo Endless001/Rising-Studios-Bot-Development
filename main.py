@@ -21,8 +21,15 @@ class TicketBot(commands.Bot):
         )
 
     async def setup_hook(self):
-        # Load your tickets cog from tickets.py
+        # Load the tickets extension from tickets.py
         await self.load_extension("tickets")
+        await self.load_extension("events")
+        await self.load_extension("welcome")
+        await self.load_extension("dev_panel")
+        await self.load_extension("member_count")
+
+
+
         
         # Sync slash commands globally or to a test guild
         try:

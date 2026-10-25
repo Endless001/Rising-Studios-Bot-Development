@@ -32,3 +32,63 @@ git push origin main
 # 4. DISCONNECT SSH SAFELY
 # ==============================================================================
 exit
+
+
+
+# ==============================================================================
+# .env for Main server
+# ==============================================================================
+
+ENTS_POST_URL=
+EVENT_ANNOUNCE_CHANNEL_ID=1564006504036573275
+EVENT_PING_ROLE_ID=1564008769128501408
+
+
+
+SERVER_NAME=Rising Studio Development
+
+# Channel IDs (Replace with your actual Discord channel IDs)
+WELCOME_CHANNEL_ID=1541594471278448682
+VOICE_CHANNEL_ID=012345678901234567
+STATUS_CHANNEL_ID=1564010522184122369
+# In RSDT ---------/
+
+# Owner / Admin ID (Endless's Discord User ID)
+ROLEADD_AUTHORIZED_USER_ID=959223334137126922S
+
+
+# ==============================================================================
+# .env for testing server
+# ==============================================================================
+
+
+
+GENERAL_TICKET_CATEGORY_ID=1563925082081071124
+IA_TICKET_CATEGORY_ID=1563925163030876160
+MANAGEMENT_TICKET_CATEGORY_ID=1563925224259321946
+
+GENERAL_ROLE_ID=1547794829319213096
+INTERNAL_AFFAIRS_ROLE_ID=1547794829319213096
+MANAGEMENT_ROLE_ID=1547794829319213096
+
+TICKET_LOG_CHANNEL_ID=1563925699616702545
+TICKET_SPREADSHEET_ID="1KcktoxIYUNShC4kU3mIjV0GYBnezKafMeWkcl3q-efQ"
+
+
+
+ENTS_POST_URL=
+EVENT_ANNOUNCE_CHANNEL_ID=1562528369214496879
+EVENT_PING_ROLE_ID=1564008769128501408
+
+
+
+SERVER_NAME=Rising Studio Development
+
+# Channel IDs (Replace with your actual Discord channel IDs)
+WELCOME_CHANNEL_ID=1562528369214496879
+VOICE_CHANNEL_ID=1564015515305775145
+STATUS_CHANNEL_ID=1564010522184122369
+# In RSDT ---------/
+
+# Owner / Admin ID (Endless's Discord User ID)
+ROLEADD_AUTHORIZED_USER_ID=959223334137126922
