@@ -136,9 +136,42 @@ async def execute_ticket_close(channel: discord.TextChannel, user: discord.User 
     await asyncio.sleep(5)
 
     try:
-        await channel.delete(reason=f"Ticket closed by {user} - Reason: {reason}")
+        await channel.delete(reason=f"Ticket closed by {user}. Reason: {reason}")
     except discord.NotFound:
         pass
+
+
+# -------------------------------------------------------------------
+# Close Request Confirmation View
+# -------------------------------------------------------------------
+class CloseRequestConfirmView(discord.ui.View):
+    def __init__(self, requester: discord.User | discord.Member, reason: str):
+        super().__init__(timeout=60)
+        self.requester = requester
+        self.reason = reason
+
+    @discord.ui.button(label="Confirm Close", style=discord.ButtonStyle.red, emoji="🔒")
+    async def confirm(self, interaction: discord.Interaction, button: discord.ui.Button):
+        for child in self.children:
+            child.disabled = True
+        await interaction.response.edit_message(view=self)
+        
+        await execute_ticket_close(
+            channel=interaction.channel,
+            user=interaction.user,
+            guild=interaction.guild,
+            reason=f"Close request confirmed by {interaction.user} (Requested by {self.requester}): {self.reason}"
+        )
+
+    @discord.ui.button(label="Cancel", style=discord.ButtonStyle.secondary, emoji="✖️")
+    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
+        for child in self.children:
+            child.disabled = True
+        await interaction.response.edit_message(
+            content="❌ Ticket close request has been cancelled.",
+            embed=None,
+            view=self
+        )
 
 
 # -------------------------------------------------------------------
@@ -488,6 +521,33 @@ class AdvancedTicketCog(commands.Cog):
             guild=interaction.guild,
             reason=reason
         )
+
+    @app_commands.command(
+        name="closerequest",
+        description="Requests to close the ticket with a prompt for confirmation.",
+    )
+    @app_commands.describe(reason="Reason for requesting ticket closure")
+    async def close_request(self, interaction: discord.Interaction, reason: str = "No reason provided"):
+        if not self.is_ticket_channel(interaction.channel):
+            await interaction.response.send_message(
+                "❌ This command can only be used inside an active ticket channel!",
+                ephemeral=True,
+            )
+            return
+
+        embed = discord.Embed(
+            title="⚠️ Ticket Close Requested",
+            description=(
+                f"{interaction.user.mention} has requested to close this ticket.\n"
+                f"**Reason:** {reason}\n\n"
+                "Click **Confirm Close** below to close this ticket, or **Cancel** to keep it open."
+            ),
+            color=discord.Color.gold(),
+            timestamp=discord.utils.utcnow()
+        )
+        
+        view = CloseRequestConfirmView(requester=interaction.user, reason=reason)
+        await interaction.response.send_message(embed=embed, view=view)
 
     @app_commands.command(
         name="claim",
